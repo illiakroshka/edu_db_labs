@@ -552,50 +552,53 @@ export class ProjectsService {
 #### Репозиторій 
 
 ```ts
+import { DatabaseService } from '../database.service';
+import { Prisma } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
-import { ProjectsRepository } from '../database/repositories/ProjectsRepository';
-import { CreateProjectDTO } from '../dtos/CreateProjectDTO';
 
 @Injectable()
-export class ProjectsService {
+export class ProjectsRepository {
   constructor (
-    private projectRepository: ProjectsRepository,
+    private prisma: DatabaseService,
   ) {}
 
-  async getAllProjects () {
-    return this.projectRepository.findMany({});
-  }
-
-  async createProject (data: CreateProjectDTO) {
-    return this.projectRepository.create({
-      Name: data.name,
-      Description: data.description,
-      Status: data.status,
+  async findMany (data: Prisma.projectsFindManyArgs) {
+    return this.prisma.projects.findMany({
+      ...data,
     });
   }
 
-  async deleteProject (projectId: number) {
-    return this.projectRepository.deleteById(projectId);
+  async create (data: Prisma.projectsUncheckedCreateInput) {
+    return this.prisma.projects.create({
+      data,
+    });
   }
 
-  async updateStatus (projectId: number, projectStatus: string) {
-    return this.projectRepository.update({
-      data: {
-        Status: projectStatus,
-      },
+  async deleteById (id: number) {
+    return this.prisma.projects.delete({
       where: {
-        Id: projectId,
+        Id: id,
       },
     });
   }
 
-  async getProjectById (projectId: number) {
-    return this.projectRepository.findById(projectId);
+  async findById (id: number) {
+    return this.prisma.projects.findUnique({
+      where: {
+        Id: id,
+      },
+    });
+  }
+
+  async update (args: Prisma.projectsUpdateArgs) {
+    return this.prisma.projects.update({
+      ...args,
+    });
   }
 }
 ```
 
-#### Пайп для валідації
+#### Пайп для валідації айді проекту
 
 ```ts
 import { Injectable, NotFoundException, PipeTransform } from '@nestjs/common';
@@ -766,7 +769,7 @@ export class RoleGrantRepository {
   }
 }
 ```
-#### Пайп для валідації
+#### Пайп для валідації айді ролі та дозволу
 
 ```ts
 import { Injectable, NotFoundException, PipeTransform } from '@nestjs/common';
