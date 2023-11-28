@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model members {
+  Id               Int                @id @unique(map: "Id") @default(autoincrement())
+  RoleId           Int
+  UserId           Int
+  roles            roles              @relation(fields: [RoleId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "roleFK")
+  users            users              @relation(fields: [UserId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "userFK")
+  projects_members projects_members[]
+
+  @@index([RoleId], map: "roleFK_idx")
+  @@index([UserId], map: "userFK_idx")
+}
+
+model payments {
+  Id             Int      @id @unique(map: "Id") @default(autoincrement())
+  CardNumber     Int
+  CardCVV        Int
+  CardExpireDate DateTime @db.DateTime(0)
+  Email          String   @db.VarChar(50)
+  ProjectId      Int
+  projects       projects @relation(fields: [ProjectId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "payments_ibfk_1")
+
+  @@index([ProjectId], map: "ProjectId")
+}
+
+model permissions {
+  Id         Int         @id @unique(map: "Id") @default(autoincrement())
+  Permission String      @db.VarChar(50)
+  role_grant roleGrant[]
+}
+
+model projects {
+  Id               Int                @id @unique(map: "Id") @default(autoincrement())
+  Name             String             @db.VarChar(50)
+  Description      String             @db.VarChar(100)
+  Status           String             @db.VarChar(20)
+  payments         payments[]
+  projects_members projects_members[]
+  reviews          reviews[]
+  tasks            tasks[]
+}
+
+model projects_members {
+  Id        Int      @id @default(autoincrement())
+  MemberId  Int
+  ProjectId Int
+  projects  projects @relation(fields: [ProjectId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "projects_members_ibfk_1")
+  members   members  @relation(fields: [MemberId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "projects_members_ibfk_2")
+
+  @@index([MemberId], map: "MemberId")
+  @@index([ProjectId], map: "ProjectId")
+}
+
+model reviews {
+  Id        Int      @id @unique(map: "Id") @default(autoincrement())
+  Text      String   @db.VarChar(100)
+  Rate      Int
+  ProjectId Int
+  projects  projects @relation(fields: [ProjectId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "reviews_ibfk_1")
+
+  @@index([ProjectId], map: "ProjectId")
+}
+
+model roleGrant {
+  Id           Int         @id @default(autoincrement())
+  RoleId       Int
+  PermissionId Int
+  roles        roles       @relation(fields: [RoleId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "role_grant_ibfk_1")
+  permissions  permissions @relation(fields: [PermissionId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "role_grant_ibfk_2")
+
+  @@index([PermissionId], map: "PermissionId")
+  @@index([RoleId], map: "RoleId")
+  @@map("role_grant")
+}
+
+model roles {
+  Id         Int         @id @unique(map: "Id") @default(autoincrement())
+  Name       String?     @unique(map: "Name") @db.VarChar(30)
+  members    members[]
+  role_grant roleGrant[]
+}
+
+model tasks {
+  Id        Int      @id @unique(map: "Id") @default(autoincrement())
+  Name      String   @db.VarChar(50)
+  Developer String   @db.VarChar(45)
+  Status    String   @db.VarChar(20)
+  Deadline  DateTime @db.DateTime(0)
+  ProjectId Int
+  projects  projects @relation(fields: [ProjectId], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "tasks_ibfk_1")
+
+  @@index([ProjectId], map: "ProjectId")
+}
+
+model users {
+  Id       Int       @id @unique(map: "Id") @default(autoincrement())
+  Login    String    @unique(map: "Login") @db.VarChar(45)
+  Picture  Bytes     @db.MediumBlob
+  Password Bytes     @db.Blob
+  Email    String    @unique(map: "Email") @db.VarChar(50)
+  Role     String    @db.VarChar(30)
+  members  members[]
+}
